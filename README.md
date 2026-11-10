@@ -75,6 +75,8 @@ In the evidence file, "quarantined" appears as the gate's decision `blocked`; th
 
 Re-run on the hardened code (2026-11-10, `evidence/demo-run-live-2026-11-10.json`): same flow, same outcome. The agent ordered 8 mugs ($100, order `6YE90305ED9278056`); the buyer approved it; the gate quarantined it (total ✗, items ✗), 0 captures. After the rejection the agent re-created 1 mug at $12.50 (order `5W367840ED493260U`); the buyer approved it; the gate captured it once (`0A354631GE7022607`, COMPLETED, $12.50). Two re-sent pay calls were reconciled, still 1 capture, and the rejected order still shows 0 captures.
 
+The demo video was recorded from a further live run on 2026-11-10 (`evidence/demo-run-video-2026-11-10.json`): attack order `2TY96121ED818624V` quarantined with 0 captures, recovered order `1Y5591238D082250L` captured once (`5B3770457X333602X`, COMPLETED, $12.50), two re-sent pay calls reconciled.
+
 Repeatability (`evidence/demo-repeatability.log`): the attack → quarantine → reject → recovery loop ran 4 more times against the live agent and sandbox (orders left unapproved, so nothing could be captured). Each time the agent ordered 8 mugs, was quarantined, and after the rejection re-created 1 mug at $12.50.
 
 ### Live, end to end in the PayPal sandbox (earlier runs)
@@ -179,7 +181,7 @@ The server refuses to start the toolkit or the gate unless both point at the san
 - **Small sample, one model.** There are 3 runs per cell with a local 7B model. Manipulation rates will differ for other models; the gate's checks do not depend on the model.
 - The item check is word matching against the approved item name. It is strict (exactly one line item, quantity ≤ approved), so close variants of the honest item pass.
 - The ledger is a local JSON file with an in-process lock, written without fsync or an atomic rename. Several gate instances would need a database with conditional writes, and a power loss at the wrong moment could lose the `pending` record; a half-written ledger stops the gate from starting rather than letting it pay.
-- `npm audit` reports 12 transitive advisories in toolkit adapters this project does not load (LangChain, AI SDK). Only the `./openai` adapter is used.
+- GitHub and `npm audit` report 12 advisories in transitive dependencies of `@paypal/agent-toolkit`. Nine are in packages its `./openai` adapter (the only one used here) does not import (LangChain, LangSmith, AI SDK, jsondiffpatch, uuid). Three are in packages it does import: `mathjs` (two advisories about its expression evaluator; the toolkit only calls `round()`) and `zod` (memory exhaustion on oversized inputs; here the inputs are the local agent's tool arguments). Dependencies were not upgraded; the versions are the toolkit's.
 - Vault (saved wallet) works in the sandbox (`evidence/vault-check.md`) but is not used by the demo, which keeps buyer-approved checkout.
 
 ## Built with
