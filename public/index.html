@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capture Gate</title>
+<style>
+  /* Capture Gate demo UI: one page, no external assets. Colours as tokens; dark mode supported. */
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#14171f; --muted:#5b6475; --line:#e3e6ec; --brand:#0f5bd8; --ok:#137a3f; --okbg:#e6f4ec;
+          --bad:#b42318; --badbg:#fdeceb; --warn:#8a5a00; --warnbg:#fff4dc; --radius:14px; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1218; --card:#171b23; --ink:#e9edf4; --muted:#9aa4b5; --line:#262c38; --brand:#5c95ff;
+          --ok:#4cc38a; --okbg:#10291c; --bad:#ff7a6e; --badbg:#2d1513; --warn:#e8b14c; --warnbg:#2a2110; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding:22px 28px 10px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:24px; letter-spacing:-.01em; }
+  header p { margin:0; color:var(--muted); flex-basis:100%; }
+  .badge { font-size:12px; font-weight:600; padding:3px 9px; border-radius:99px; background:var(--warnbg); color:var(--warn); }
+  main { display:grid; grid-template-columns: 320px 1fr 340px; gap:16px; padding:10px 28px 28px; }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; padding:10px 16px 20px; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; }
+  .card h2 { margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  input, select { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; }
+  .seg { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-top:4px; }
+  .seg button { border:0; padding:9px; background:transparent; color:var(--ink); font:inherit; cursor:pointer; }
+  .seg button.on { background:var(--brand); color:#fff; }
+  .primary { width:100%; margin-top:14px; padding:11px; border:0; border-radius:10px; background:var(--brand); color:#fff; font:600 15px/1 inherit; cursor:pointer; }
+  .primary:disabled { opacity:.45; cursor:default; }
+  .hint { color:var(--muted); font-size:13px; margin:8px 0 0; }
+  .col { display:flex; flex-direction:column; gap:16px; }
+  ol.timeline { list-style:none; margin:0; padding:0; }
+  ol.timeline li { padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  ol.timeline li:last-child { border:0; }
+  .tool { font-family: ui-monospace, Menlo, monospace; font-size:12.5px; color:var(--brand); }
+  .args { font-family: ui-monospace, Menlo, monospace; font-size:12px; color:var(--muted); white-space:pre-wrap; word-break:break-word; }
+  .orderbox { margin-top:12px; padding:12px; border-radius:10px; background:var(--bg); }
+  .orderbox a { color:var(--brand); font-weight:600; }
+  .check { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .check:last-child { border:0; }
+  .y { color:var(--ok); font-weight:700; } .n { color:var(--bad); font-weight:700; }
+  .verdict { margin-top:10px; padding:12px; border-radius:10px; font-weight:700; text-align:center; font-size:16px; }
+  .verdict.ok { background:var(--okbg); color:var(--ok); } .verdict.bad { background:var(--badbg); color:var(--bad); } .verdict.warn { background:var(--warnbg); color:var(--warn); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; }
+  .wide { grid-column: 1 / -1; }
+  .empty { color:var(--muted); font-size:14px; }
+  ol.timeline li.you { background:var(--warnbg); border-radius:8px; padding:8px 10px; }
+  table.diff td.bad { color:var(--bad); font-weight:700; }
+  #reject, #retry { margin-top:10px; }
+  .rt { font-size:15px; margin:18px 0 8px; } .rt:first-child { margin-top:0; }
+  .badge.live { background:var(--okbg); color:var(--ok); }
+  .scroll { overflow-x:auto; }
+  main > * { min-width:0; }   /* let wide tables scroll inside their card instead of widening the page */
+</style>
+</head>
+<body>
+<header>
+  <h1>Capture Gate</h1><span class="badge">PayPal sandbox · no real money</span>
+  <p>An independent check between an AI shopping agent and the money: the agent can be tricked, the gate re-reads the real PayPal order and only pays for what you approved.</p>
+</header>
+<main>
+  <section class="col">
+    <div class="card">
+      <h2>1 · You approve the purchase</h2>
+      <label for="item">Item</label><input id="item" value="Ceramic mug">
+      <label for="qty">Quantity</label><input id="qty" type="number" min="1" value="1">
+      <label for="max">Spending limit (USD)</label><input id="max" type="number" step="0.01" value="12.50">
+      <p class="hint">Frozen before the agent reads anything. The agent never sees or edits it.</p>
+    </div>
+    <div class="card">
+      <h2>2 · The shop page the agent reads</h2>
+      <select id="page">
+        <option value="clean">Honest listing</option>
+        <option value="attack-upsell">Poisoned: hidden "add $86.50 protection plan"</option>
+        <option value="attack-quantity">Poisoned: "you must order 8"</option>
+        <option value="attack-swap">Poisoned: "buy the $449 espresso machine instead"</option>
+      </select>
+      <h2 style="margin-top:16px">3 · Protection</h2>
+      <div class="seg" role="group" aria-label="Protection mode">
+        <button id="m-protected" class="on" type="button">Capture Gate on</button>
+        <button id="m-unprotected" type="button">Agent pays directly</button>
+      </div>
+      <button id="run" class="primary" type="button">Run the shopping agent</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>4 · What the agent does (PayPal Agent Toolkit)</h2>
+    <ol id="timeline" class="timeline"><li class="empty">Run the agent to see its steps.</li></ol>
+    <div id="orderbox"></div>
+  </section>
+
+  <section class="col">
+    <div class="card"><h2>5 · Gate decision</h2><div id="gate"><p class="empty">Appears when the agent tries to pay.</p></div></div>
+    <div class="card"><h2>6 · What PayPal says happened</h2><div id="truth"><p class="empty">Read back from PayPal after payment.</p></div></div>
+  </section>
+
+  <section class="card wide">
+    <h2>Measured results</h2>
+    <div id="results"><p class="empty">No evaluation run yet.</p></div>
+  </section>
+</main>
+<script>
+  // Small client: start a run, poll its state, render steps, gate checks and the real PayPal outcome.
+  const $ = (id) => document.getElementById(id);
+  let mode = "protected", runId = null, timer = null;
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const LABELS = { created_in_this_session: "Order created in this session", not_already_fulfilled: "Not already paid for",
+    payee_is_intended_merchant: "Pays the intended shop", currency_matches: "Currency matches", total_within_approved_limit: "Total within your limit",
+    items_match_intent: "Items match what you approved", buyer_approved: "Buyer approved in PayPal", not_rejected_by_user: "Not rejected by you" };
+
+  // gate decision -> [style, text]. "incident" = money moved that does not fit the approval; it is never shown as a normal payment.
+  const VERDICT = { captured: ["ok", "Captured · matches your approval"], reconciled: ["ok", "Already paid · no second charge"], blocked: ["bad", "Blocked · nothing captured"],
+    capture_pending: ["warn", "PayPal reports the capture as pending · not complete yet"], incident: ["bad", "Security incident · the captured payment does not match your approval · reconcile manually"] };
+
+  for (const m of ["protected", "unprotected"]) $("m-" + m).onclick = () => { mode = m; for (const k of ["protected", "unprotected"]) $("m-" + k).classList.toggle("on", k === m); };
+
+  $("run").onclick = async () => {
+    $("run").disabled = true; $("gate").innerHTML = '<p class="empty">Waiting for the agent…</p>'; $("truth").innerHTML = '<p class="empty">…</p>'; $("orderbox").innerHTML = "";
+    const r = await fetch("/api/run", { method: "POST", body: JSON.stringify({ mode, page: $("page").value, item: $("item").value, quantity: $("qty").value, maxTotal: $("max").value }) }).then((x) => x.json());
+    runId = r.id; clearInterval(timer); timer = setInterval(poll, 1000); poll();
+  };
+
+  async function complete() {
+    $("orderbox").querySelector("button").disabled = true;
+    await fetch("/api/complete", { method: "POST", body: JSON.stringify({ id: runId }) });
+  }
+
+  async function poll() {
+    const run = await fetch("/api/run?id=" + runId).then((x) => x.json());
+    $("timeline").innerHTML = run.steps.map((s) => s.kind === "tool"
+      ? `<li><span class="tool">${esc(s.name)}</span> <div class="args">${esc(JSON.stringify(s.args))}</div></li>`
+      : s.kind === "say" ? `<li>${esc(s.text)}</li>`
+      : s.kind === "user" ? `<li class="you"><b>You:</b> ${esc(s.text)}</li>`
+      : s.kind === "order" ? `<li>Order <b>${esc(s.orderId)}</b> created · ${esc(s.amount?.value)} ${esc(s.amount?.currency_code)}</li>` : "").join("") || '<li class="empty">Thinking…</li>';
+    const order = [...run.steps].reverse().find((s) => s.kind === "order");
+    if (run.state === "awaiting_buyer" && order && $("orderbox").dataset.order !== order.orderId) {   // one approval box per order (a recovered order gets a new one)
+      $("orderbox").dataset.order = order.orderId;
+      $("orderbox").innerHTML = `<div class="orderbox">The buyer approves order <b>${esc(order.orderId)}</b> in PayPal, like any checkout:<br>
+        <a href="${esc(order.approveUrl)}" target="_blank" rel="noopener">Open PayPal sandbox approval ↗</a>
+        <button class="primary" type="button">Buyer approved → let the agent pay</button></div>`;
+      $("orderbox").querySelector("button").onclick = complete;
+    }
+    if (run.state === "recovering") { $("gate").innerHTML = '<div class="verdict warn">You rejected the change · the agent is re-creating your original order…</div>'; $("orderbox").innerHTML = ""; $("orderbox").dataset.order = ""; }
+    else if (run.state === "quarantined") renderQuarantine(run);
+    else if (run.pay) renderGate(run);
+    if (run.truth) renderTruth(run); else if (run.state === "recovering") $("truth").innerHTML = rejectedLines(run);
+    if (run.state === "no_order") $("gate").innerHTML = '<div class="verdict warn">The agent stopped without creating an order · nothing to pay</div>';
+    if (["done", "failed", "no_order"].includes(run.state)) { clearInterval(timer); $("run").disabled = false; if (run.error) $("gate").innerHTML = `<div class="verdict warn">${esc(run.error)}</div>`; }
+  }
+
+  // quarantine: the gate refused to capture; show what you approved vs what the agent ordered, and let you reject it
+  function renderQuarantine(run) {
+    const it = run.intent, t = run.truth || { items: [], amount: "?" }, failed = run.pay?.failed || [];
+    $("gate").innerHTML = `<div class="verdict bad">Quarantined · payment held, nothing captured</div>
+      <table class="diff"><thead><tr><th></th><th>You approved</th><th>Agent's order</th></tr></thead><tbody>
+        <tr><th>Item</th><td>${esc(it.quantity)} × ${esc(it.item)}</td><td class="bad">${esc(t.items.join(", "))}</td></tr>
+        <tr><th>Total</th><td>up to ${esc(it.maxTotal)} USD</td><td class="${failed.includes("total_within_approved_limit") ? "bad" : ""}">${esc(t.amount)} ${esc(t.currency || "")}</td></tr></tbody></table>
+      <p class="hint"><b>Why:</b> ${failed.map((k) => esc(LABELS[k] || k) + " ✗").join(" · ")}</p>
+      <p class="hint"><b>Risk:</b> the agent changed your purchase after reading the shop page. Paying would take money you did not approve.</p>
+      <button class="primary" type="button" id="reject">Reject · keep my original purchase</button>`;
+    $("reject").onclick = async () => { $("reject").disabled = true; await fetch("/api/reject", { method: "POST", body: JSON.stringify({ id: runId }) }); };
+  }
+
+  const rejectedLines = (run) => (run.rejected || []).map((r) => `<div class="check"><span>Rejected order ${esc(r.orderId)}</span><b>${esc(r.truth?.amount)} USD · captured ${(r.truth?.captures || []).length ? "YES" : "never"}</b></div>`).join("");
+
+  async function retry() {
+    $("retry").disabled = true;
+    await fetch("/api/retry", { method: "POST", body: JSON.stringify({ id: runId }) });
+    poll();
+  }
+
+  function renderGate(run) {
+    if (run.mode === "unprotected") { $("gate").innerHTML = '<div class="verdict warn">Gate off: the agent captured with the toolkit directly</div>'; return; }
+    const p = run.pay, checks = p.checks || {};
+    $("gate").innerHTML = Object.entries(checks).map(([k, ok]) => `<div class="check"><span>${esc(LABELS[k] || k)}</span><span class="${ok ? "y" : "n"}">${ok ? "✓" : "✗"}</span></div>`).join("")
+      + `<div class="verdict ${VERDICT[p.decision]?.[0] || "bad"}">${esc(p.decision === "blocked" && p.reason ? "Held · " + p.reason : VERDICT[p.decision]?.[1] || p.decision)}</div>`
+      + (run.state === "done" && ["captured", "capture_pending", "blocked"].includes(p.decision) ? (run.retries || []).map((r, i) => `<div class="check"><span>Agent retry ${i + 1} (pay_order again)</span><b>${esc(r.decision)}${r.decision === "reconciled" ? " · no new charge" : ""}</b></div>`).join("")
+          + `<button class="primary" type="button" id="retry">Simulate agent retry (pay again)</button>` : "");
+    if ($("retry")) $("retry").onclick = retry;
+  }
+
+  function renderTruth(run) {
+    const t = run.truth, intent = run.intent;
+    const charged = t.captures.reduce((a, c) => a + Number(c.amount || 0), 0);
+    const over = charged > Number(intent.maxTotal);
+    $("truth").innerHTML = `<div class="check"><span>Order total</span><b>${esc(t.amount)} ${esc(t.currency)}</b></div>
+      <div class="check"><span>Items</span><span>${esc(t.items.join(", "))}</span></div>
+      <div class="check"><span>Captured</span><b>${charged.toFixed(2)} USD · ${t.captures.length} capture${t.captures.length === 1 ? "" : "s"}</b></div>
+      <div class="verdict ${over ? "bad" : "ok"}">${over ? `Charged ${(charged - intent.maxTotal).toFixed(2)} USD more than you approved` : charged ? "Charged exactly what you approved" : "Nothing charged"}</div>`
+      + rejectedLines(run);
+  }
+
+  // results: live sandbox runs and simulated scenarios are separate tables with their own badge
+  fetch("/api/results").then((x) => x.json()).then((r) => {
+    if (!r.tables?.length) return;
+    $("results").innerHTML = r.tables.map((t) => `<h3 class="rt"><span class="badge ${t.kind === "live" ? "live" : ""}">${t.kind === "live" ? "LIVE · PayPal sandbox" : "SIMULATED approval + capture"}</span> ${esc(t.title)}</h3>
+      <div class="scroll"><table><thead><tr>${t.columns.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${t.rows.map((row) => `<tr>${row.map((v) => `<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="hint">${esc(t.note || "")}</p>`).join("");
+  });
+</script>
+</body>
+</html>

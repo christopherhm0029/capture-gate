@@ -1,0 +1,3 @@
+node_modules/
+# runtime ledger of the local demo (order ids, no secrets)
+state/

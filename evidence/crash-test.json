@@ -1,0 +1,102 @@
+{
+ "ledger": "[local-tmp]/crash-iByxWS/ledger.json",
+ "intent": {
+  "item": "Ceramic mug",
+  "quantity": 1,
+  "maxTotal": "12.50",
+  "currency": "USD",
+  "merchantId": "L5U7ZS83QUXJG",
+  "approvedAt": "2026-11-04T13:35:06.602Z",
+  "id": "89cbac41018c"
+ },
+ "orders": {
+  "gatedA": {
+   "id": "1DU13724EC230904M",
+   "approve": "https://www.sandbox.paypal.com/checkoutnow?token=1DU13724EC230904M"
+  },
+  "gatedB": {
+   "id": "7T51526463265472M",
+   "approve": "https://www.sandbox.paypal.com/checkoutnow?token=7T51526463265472M"
+  },
+  "ungatedA": {
+   "id": "15561215E1027510P",
+   "approve": "https://www.sandbox.paypal.com/checkoutnow?token=15561215E1027510P"
+  },
+  "ungatedB": {
+   "id": "7GT11482BY736440S",
+   "approve": "https://www.sandbox.paypal.com/checkoutnow?token=7GT11482BY736440S"
+  }
+ },
+ "results": {
+  "double_pay_at_once": {
+   "decisions": [
+    "captured",
+    "reconciled"
+   ],
+   "paypal": {
+    "status": "COMPLETED",
+    "captures": [
+     [
+      "9M269294EN605530E",
+      "COMPLETED",
+      "12.50"
+     ]
+    ]
+   }
+  },
+  "crash_then_retry": {
+   "decision": "reconciled",
+   "paypal": {
+    "status": "COMPLETED",
+    "captures": [
+     [
+      "9M269294EN605530E",
+      "COMPLETED",
+      "12.50"
+     ]
+    ]
+   }
+  },
+  "second_order_same_intent": {
+   "decision": "blocked",
+   "failed": [
+    "not_already_fulfilled"
+   ],
+   "paypal": {
+    "status": "APPROVED",
+    "captures": []
+   }
+  },
+  "ungated_restart": {
+   "paypalA": {
+    "status": "COMPLETED",
+    "captures": [
+     [
+      "7GN20009KK419650D",
+      "COMPLETED",
+      "12.50"
+     ]
+    ]
+   },
+   "paypalB": {
+    "status": "COMPLETED",
+    "captures": [
+     [
+      "0C7770248A532191P",
+      "COMPLETED",
+      "12.50"
+     ]
+    ]
+   },
+   "statuses": [
+    "success",
+    "success"
+   ]
+  },
+  "summary": {
+   "gated_charges_for_one_intent": 1,
+   "ungated_charges_for_one_intent": 2
+  }
+ },
+ "ranAt": "2026-11-04T14:51:59.725Z"
+}

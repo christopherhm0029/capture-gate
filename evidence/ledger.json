@@ -1,0 +1,466 @@
+{
+ "intents": {
+  "16eac99f1bf2": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-04T13:29:57.166Z",
+    "id": "16eac99f1bf2"
+   },
+   "orders": [
+    "2VS304242U4648301"
+   ],
+   "capture": null,
+   "decisions": []
+  },
+  "4d41ac56d2b4": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-04T13:30:18.056Z",
+    "id": "4d41ac56d2b4"
+   },
+   "orders": [
+    "4DS17277MB443923T"
+   ],
+   "capture": null,
+   "decisions": []
+  },
+  "bfa3da30e641": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-04T13:30:22.182Z",
+    "id": "bfa3da30e641"
+   },
+   "orders": [
+    "94941173FE368860Y"
+   ],
+   "capture": null,
+   "decisions": []
+  },
+  "80aca1ac6427": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-04T13:30:26.393Z",
+    "id": "80aca1ac6427"
+   },
+   "orders": [],
+   "capture": null,
+   "decisions": []
+  },
+  "ce52815c116c": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-05T01:00:58.612Z",
+    "id": "ce52815c116c"
+   },
+   "orders": [
+    "73842376E73768816",
+    "1SF07279DJ917030T"
+   ],
+   "capture": null,
+   "decisions": [
+    {
+     "at": "2026-11-05T01:01:20.592Z",
+     "orderId": "73842376E73768816",
+     "decision": "blocked",
+     "checks": {
+      "created_in_this_session": true,
+      "not_already_fulfilled": true,
+      "not_rejected_by_user": true,
+      "payee_is_intended_merchant": true,
+      "currency_matches": true,
+      "total_within_approved_limit": false,
+      "items_match_intent": false,
+      "buyer_approved": false
+     },
+     "failed": [
+      "total_within_approved_limit",
+      "items_match_intent",
+      "buyer_approved"
+     ],
+     "amount": {
+      "currency_code": "USD",
+      "value": "100.00",
+      "breakdown": {
+       "item_total": {
+        "currency_code": "USD",
+        "value": "100.00"
+       },
+       "shipping": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "tax_total": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "discount": {
+        "currency_code": "USD",
+        "value": "0.00"
+       }
+      }
+     }
+    },
+    {
+     "at": "2026-11-05T01:01:22.793Z",
+     "orderId": "73842376E73768816",
+     "decision": "rejected_by_user"
+    }
+   ],
+   "rejected": [
+    "73842376E73768816"
+   ]
+  },
+  "49c5700dfd6e": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-05T01:01:30.814Z",
+    "id": "49c5700dfd6e"
+   },
+   "orders": [
+    "56N98738EU619373W",
+    "8UN63052DG702670H"
+   ],
+   "capture": null,
+   "decisions": [
+    {
+     "at": "2026-11-05T01:01:38.500Z",
+     "orderId": "56N98738EU619373W",
+     "decision": "blocked",
+     "checks": {
+      "created_in_this_session": true,
+      "not_already_fulfilled": true,
+      "not_rejected_by_user": true,
+      "payee_is_intended_merchant": true,
+      "currency_matches": true,
+      "total_within_approved_limit": false,
+      "items_match_intent": false,
+      "buyer_approved": false
+     },
+     "failed": [
+      "total_within_approved_limit",
+      "items_match_intent",
+      "buyer_approved"
+     ],
+     "amount": {
+      "currency_code": "USD",
+      "value": "100.00",
+      "breakdown": {
+       "item_total": {
+        "currency_code": "USD",
+        "value": "100.00"
+       },
+       "shipping": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "tax_total": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "discount": {
+        "currency_code": "USD",
+        "value": "0.00"
+       }
+      }
+     }
+    },
+    {
+     "at": "2026-11-05T01:01:40.847Z",
+     "orderId": "56N98738EU619373W",
+     "decision": "rejected_by_user"
+    }
+   ],
+   "rejected": [
+    "56N98738EU619373W"
+   ]
+  },
+  "aacfebb96ba3": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-05T01:01:48.886Z",
+    "id": "aacfebb96ba3"
+   },
+   "orders": [
+    "14360096F8151360K",
+    "87028601L5520835H"
+   ],
+   "capture": null,
+   "decisions": [
+    {
+     "at": "2026-11-05T01:01:57.936Z",
+     "orderId": "14360096F8151360K",
+     "decision": "blocked",
+     "checks": {
+      "created_in_this_session": true,
+      "not_already_fulfilled": true,
+      "not_rejected_by_user": true,
+      "payee_is_intended_merchant": true,
+      "currency_matches": true,
+      "total_within_approved_limit": false,
+      "items_match_intent": false,
+      "buyer_approved": false
+     },
+     "failed": [
+      "total_within_approved_limit",
+      "items_match_intent",
+      "buyer_approved"
+     ],
+     "amount": {
+      "currency_code": "USD",
+      "value": "100.00",
+      "breakdown": {
+       "item_total": {
+        "currency_code": "USD",
+        "value": "100.00"
+       },
+       "shipping": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "tax_total": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "discount": {
+        "currency_code": "USD",
+        "value": "0.00"
+       }
+      }
+     }
+    },
+    {
+     "at": "2026-11-05T01:01:58.937Z",
+     "orderId": "14360096F8151360K",
+     "decision": "rejected_by_user"
+    }
+   ],
+   "rejected": [
+    "14360096F8151360K"
+   ]
+  },
+  "f1181831ff13": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-05T01:02:19.365Z",
+    "id": "f1181831ff13"
+   },
+   "orders": [
+    "3UJ99338VS523070A",
+    "3M252500HU714851T"
+   ],
+   "capture": {
+    "orderId": "3M252500HU714851T",
+    "id": "2K367715620326625",
+    "status": "COMPLETED",
+    "amount": {
+     "currency_code": "USD",
+     "value": "12.50"
+    }
+   },
+   "decisions": [
+    {
+     "at": "2026-11-05T01:13:42.417Z",
+     "orderId": "3UJ99338VS523070A",
+     "decision": "blocked",
+     "checks": {
+      "created_in_this_session": true,
+      "not_already_fulfilled": true,
+      "not_rejected_by_user": true,
+      "payee_is_intended_merchant": true,
+      "currency_matches": true,
+      "total_within_approved_limit": false,
+      "items_match_intent": false,
+      "buyer_approved": true
+     },
+     "failed": [
+      "total_within_approved_limit",
+      "items_match_intent"
+     ],
+     "amount": {
+      "currency_code": "USD",
+      "value": "100.00",
+      "breakdown": {
+       "item_total": {
+        "currency_code": "USD",
+        "value": "100.00"
+       },
+       "shipping": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "tax_total": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "discount": {
+        "currency_code": "USD",
+        "value": "0.00"
+       }
+      }
+     }
+    },
+    {
+     "at": "2026-11-05T01:13:55.742Z",
+     "orderId": "3UJ99338VS523070A",
+     "decision": "rejected_by_user"
+    },
+    {
+     "at": "2026-11-05T01:14:44.311Z",
+     "orderId": "3M252500HU714851T",
+     "decision": "captured",
+     "checks": {
+      "created_in_this_session": true,
+      "not_already_fulfilled": true,
+      "not_rejected_by_user": true,
+      "payee_is_intended_merchant": true,
+      "currency_matches": true,
+      "total_within_approved_limit": true,
+      "items_match_intent": true,
+      "buyer_approved": true
+     },
+     "capture": {
+      "orderId": "3M252500HU714851T",
+      "id": "2K367715620326625",
+      "status": "COMPLETED",
+      "amount": {
+       "currency_code": "USD",
+       "value": "12.50"
+      }
+     },
+     "http": 201
+    },
+    {
+     "at": "2026-11-05T01:14:54.120Z",
+     "orderId": "3M252500HU714851T",
+     "decision": "reconciled",
+     "capture": {
+      "orderId": "3M252500HU714851T",
+      "id": "2K367715620326625",
+      "status": "COMPLETED",
+      "amount": {
+       "currency_code": "USD",
+       "value": "12.50"
+      }
+     }
+    },
+    {
+     "at": "2026-11-05T01:14:58.543Z",
+     "orderId": "3M252500HU714851T",
+     "decision": "reconciled",
+     "capture": {
+      "orderId": "3M252500HU714851T",
+      "id": "2K367715620326625",
+      "status": "COMPLETED",
+      "amount": {
+       "currency_code": "USD",
+       "value": "12.50"
+      }
+     }
+    }
+   ],
+   "rejected": [
+    "3UJ99338VS523070A"
+   ]
+  },
+  "f5c315f3dc95": {
+   "intent": {
+    "item": "Ceramic mug",
+    "quantity": 1,
+    "maxTotal": "12.50",
+    "currency": "USD",
+    "merchantId": "L5U7ZS83QUXJG",
+    "approvedAt": "2026-11-05T01:22:04.509Z",
+    "id": "f5c315f3dc95"
+   },
+   "orders": [
+    "46A95392652535153",
+    "13E27897A4761105J"
+   ],
+   "capture": null,
+   "decisions": [
+    {
+     "at": "2026-11-05T01:22:20.049Z",
+     "orderId": "46A95392652535153",
+     "decision": "blocked",
+     "checks": {
+      "created_in_this_session": true,
+      "not_already_fulfilled": true,
+      "not_rejected_by_user": true,
+      "payee_is_intended_merchant": true,
+      "currency_matches": true,
+      "total_within_approved_limit": false,
+      "items_match_intent": false,
+      "buyer_approved": false
+     },
+     "failed": [
+      "total_within_approved_limit",
+      "items_match_intent",
+      "buyer_approved"
+     ],
+     "amount": {
+      "currency_code": "USD",
+      "value": "100.00",
+      "breakdown": {
+       "item_total": {
+        "currency_code": "USD",
+        "value": "100.00"
+       },
+       "shipping": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "tax_total": {
+        "currency_code": "USD",
+        "value": "0.00"
+       },
+       "discount": {
+        "currency_code": "USD",
+        "value": "0.00"
+       }
+      }
+     }
+    },
+    {
+     "at": "2026-11-05T01:22:20.564Z",
+     "orderId": "46A95392652535153",
+     "decision": "rejected_by_user"
+    }
+   ],
+   "rejected": [
+    "46A95392652535153"
+   ]
+  }
+ }
+}
