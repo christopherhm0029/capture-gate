@@ -1,0 +1,163 @@
+# deploy/template.yaml — hosts the SIMULATED Capture Gate demo on one small always-on server.
+# What it creates: one EC2 instance (ARM), one fixed public IP, one firewall group (web ports only, no SSH),
+# one IAM role (remote management through SSM only: no access to secrets, data or other resources), one DNS record.
+# On first boot the server downloads this repository at one pinned commit and Caddy at one pinned, checksum-verified
+# version, then runs both as system services that restart on failure and on reboot. No PayPal credentials exist on it.
+#
+# Deploy:   aws cloudformation deploy --region eu-west-2 --stack-name capture-gate-demo --template-file deploy/template.yaml \
+#             --capabilities CAPABILITY_IAM --parameter-overrides DomainName=<host> HostedZoneId=<zone> GitSha=<full commit sha>
+# Teardown: aws cloudformation delete-stack --region eu-west-2 --stack-name capture-gate-demo
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Capture Gate simulated judge demo - one always-on server (EC2 + Caddy HTTPS + systemd). Simulation only.
+
+Parameters:
+  DomainName: { Type: String, Description: Public host name of the demo }
+  HostedZoneId: { Type: "AWS::Route53::HostedZone::Id", Description: Route 53 zone that owns DomainName }
+  GitSha: { Type: String, AllowedPattern: "^[0-9a-f]{40}$", Description: Full commit of the public repository to run }
+  Repo: { Type: String, Default: christopherhm0029/capture-gate }
+  InstanceType: { Type: String, Default: t4g.small }
+  ImageId: { Type: "AWS::EC2::Image::Id", Default: ami-073a50f96375296bf, Description: Amazon Linux 2023 arm64 in eu-west-2 - pinned }
+  CaddyVersion: { Type: String, Default: "2.11.9" }
+  CaddySha512:
+    Type: String
+    Default: 9e5e76d7888542924de2c25353ae87c5f77e2a22c5b1198633cae13688922282e05383d142599205c88d8d80eee5e967d291214d7abce4835329a191b20dd6e0
+    Description: Published sha512 of caddy_<version>_linux_arm64.tar.gz
+
+Resources:
+  # Web ports only. No SSH: the server is managed through SSM Session Manager.
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Capture Gate demo - HTTP and HTTPS only
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0, Description: HTTP (redirect and certificate issuance) }
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0, Description: HTTPS }
+
+  # Least privilege: only what SSM needs to manage the instance. Nothing else in the account is reachable.
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{ Effect: Allow, Principal: { Service: ec2.amazonaws.com }, Action: "sts:AssumeRole" }]
+      ManagedPolicyArns: ["arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"]
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: { Roles: [!Ref InstanceRole] }
+
+  Server:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroupIds: [!GetAtt WebSecurityGroup.GroupId]
+      MetadataOptions: { HttpTokens: required, HttpPutResponseHopLimit: 1 }
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs: { VolumeSize: 8, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true }
+      Tags: [{ Key: Name, Value: capture-gate-demo }]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # First-boot setup. Fails loudly: any error stops the script (see /var/log/cloud-init-output.log).
+          set -euxo pipefail
+          dnf install -y nodejs22 tar gzip
+          NODE=$(command -v node-22 || command -v node)
+
+          # The app: this repository at one pinned commit, owned by root, run by an unprivileged user.
+          useradd --system --shell /sbin/nologin capturegate
+          mkdir -p /opt/capture-gate
+          curl -fsSL "https://github.com/${Repo}/archive/${GitSha}.tar.gz" | tar -xz --strip-components=1 -C /opt/capture-gate
+          mkdir -p /opt/capture-gate/state && chown capturegate:capturegate /opt/capture-gate/state
+          cat > /etc/systemd/system/capture-gate.service <<UNIT
+          [Unit]
+          Description=Capture Gate simulated demo (real gate, fake PayPal, no credentials)
+          After=network-online.target
+          Wants=network-online.target
+          [Service]
+          User=capturegate
+          WorkingDirectory=/opt/capture-gate
+          Environment=PORT=8740 PUBLIC_HOST=${DomainName} GIT_SHA=${GitSha} NODE_ENV=production
+          ExecStart=$NODE --max-old-space-size=256 server.mjs
+          Restart=always
+          RestartSec=2
+          MemoryMax=400M
+          CPUQuota=150%
+          TasksMax=64
+          NoNewPrivileges=true
+          ProtectSystem=strict
+          ProtectHome=true
+          PrivateTmp=true
+          PrivateDevices=true
+          ReadWritePaths=/opt/capture-gate/state
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+
+          # Caddy: HTTPS in front of the app. Pinned version, verified against its published checksum before use.
+          cd /tmp
+          curl -fsSL -o caddy.tgz "https://github.com/caddyserver/caddy/releases/download/v${CaddyVersion}/caddy_${CaddyVersion}_linux_arm64.tar.gz"
+          echo "${CaddySha512}  caddy.tgz" | sha512sum -c -
+          tar -xzf caddy.tgz caddy && install -m 0755 caddy /usr/local/bin/caddy && rm -f caddy caddy.tgz
+          useradd --system --home /var/lib/caddy --create-home --shell /sbin/nologin caddy
+          mkdir -p /etc/caddy
+          cat > /etc/caddy/Caddyfile <<CADDY
+          ${DomainName} {
+            encode gzip
+            request_body {
+              max_size 4KB
+            }
+            header {
+              Strict-Transport-Security "max-age=31536000"
+              -Server
+            }
+            reverse_proxy 127.0.0.1:8740
+          }
+          CADDY
+          cat > /etc/systemd/system/caddy.service <<UNIT
+          [Unit]
+          Description=Caddy HTTPS reverse proxy for the Capture Gate demo
+          After=network-online.target
+          Wants=network-online.target
+          [Service]
+          User=caddy
+          Group=caddy
+          ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile
+          Restart=always
+          RestartSec=2
+          LimitNOFILE=65536
+          MemoryMax=300M
+          AmbientCapabilities=CAP_NET_BIND_SERVICE
+          NoNewPrivileges=true
+          ProtectSystem=full
+          PrivateTmp=true
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+
+          # Keep the system log from filling the disk.
+          mkdir -p /etc/systemd/journald.conf.d
+          printf '[Journal]\nSystemMaxUse=200M\n' > /etc/systemd/journald.conf.d/size.conf
+          systemctl restart systemd-journald
+          systemctl daemon-reload
+          systemctl enable --now capture-gate.service caddy.service
+
+  # A fixed address, so the DNS record survives a stop/start of the server.
+  Address:
+    Type: AWS::EC2::EIP
+    Properties: { Domain: vpc, InstanceId: !Ref Server }
+
+  DnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      TTL: "300"
+      ResourceRecords: [!Ref Address]
+
+Outputs:
+  Url: { Value: !Sub "https://${DomainName}" }
+  InstanceId: { Value: !Ref Server }
+  PublicIp: { Value: !Ref Address }

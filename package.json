@@ -10,6 +10,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
+    "demo": "node server.mjs",
     "test": "node --test test/*.test.mjs",
     "simulate": "node scripts/simulate.mjs"
   },

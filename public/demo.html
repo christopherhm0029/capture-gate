@@ -1,0 +1,102 @@
+<!doctype html>
+<!-- demo.html — the guided SIMULATED judge demo of Capture Gate (served at / by `npm run demo`). One full-screen map of
+     a transaction's journey (You -> AI agent -> shop page -> Capture Gate -> PayPal), an inspector panel on the right,
+     and a stop timeline along the bottom: the layout pattern of our Atlas Ferroviario train map, in a light theme.
+     Plain HTML/CSS/JS, no framework, no external assets. Every verdict comes from the real gate (lib/gate.mjs) via
+     /api/sim/*; the PayPal side is a deterministic fake. The sandbox page (index.html) needs DEMO_MODE=sandbox. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Capture Gate · guided demo (SIMULATED)</title>
+<link rel="stylesheet" href="/demo.css">
+</head>
+<body>
+<!-- The map: the whole journey. Stations and the travelling transaction are drawn by demo.js. -->
+<main class="map" id="mapWrap" aria-label="Map of the transaction's journey">
+  <svg id="map" role="img" aria-label="You, the AI agent, the shop page, Capture Gate and PayPal, joined by the route the transaction takes"></svg>
+  <div class="callout" id="callout" hidden><p class="co-eyebrow" id="coEyebrow"></p><p class="co-title" id="coTitle"></p><p class="co-sub" id="coSub"></p></div>
+</main>
+
+<!-- Top-left: brand and the scenario, where Atlas has its search box. -->
+<header class="lead">
+  <p class="brand"><span class="brand-mark" aria-hidden="true"></span>Capture Gate <span class="pill sim">SIMULATED</span></p>
+  <div class="scenario">
+    <h1>You approved <b class="c-blue" id="hApproved">$12.50</b>. A hidden line made your agent try <b class="c-red" id="hAttack">$100.00</b>.</h1>
+    <p id="hKind">Follow the transaction and see where it is stopped.</p>
+  </div>
+</header>
+
+<!-- Top-right map controls. -->
+<div class="controls">
+  <button id="overview" class="control" type="button" title="Show the whole journey">Overview</button>
+  <button id="gateToggle" class="control switch" type="button" role="switch" aria-checked="true" title="Run the same scenario with or without Capture Gate">
+    <span class="sw"><span class="knob"></span></span>Gate <b id="gateWord">ON</b></button>
+  <button id="restart" class="control" type="button" title="Start the scenario again">Restart</button>
+</div>
+
+<!-- Bottom: the stops of the journey, like a train's stop timeline. -->
+<nav class="timeline" id="timeline" aria-label="Stops of the journey"><ol class="strip" id="strip"></ol></nav>
+
+<!-- The inspector: what the transaction is doing now, the one next action, and the details behind it. -->
+<aside class="sheet" id="sheet" aria-label="Transaction inspector">
+  <div class="sheet-head">
+    <p class="eyebrow">Transaction · <span class="sim-word">simulated</span> <span class="pill sim" id="scPill">recorded scenario</span></p>
+    <h2 class="title">1 Ceramic mug <span class="arrow">→</span> PayPal</h2>
+    <p class="state" id="state"><span class="dot"></span><span id="stateText">Waiting for your approval</span><span class="by" id="stateBy"></span></p>
+  </div>
+
+  <div class="next" id="next" aria-live="polite">
+    <p class="next-step" id="nStep"></p>
+    <p class="next-text" id="nText"></p>
+    <div class="next-btns" id="nBtns"></div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Inspector sections">
+    <button role="tab" id="tab-journey" aria-controls="pane-journey" aria-selected="true">Journey</button>
+    <button role="tab" id="tab-checks" aria-controls="pane-checks" aria-selected="false">Checks</button>
+    <button role="tab" id="tab-data" aria-controls="pane-data" aria-selected="false">Data</button>
+  </div>
+
+  <section class="pane" id="pane-journey" role="tabpanel" aria-labelledby="tab-journey">
+    <dl class="facts">
+      <div class="fact"><dt>You approved</dt><dd class="c-blue" id="fApproved">$12.50</dd><p class="fact-note">1 × Ceramic mug · frozen</p></div>
+      <div class="fact"><dt>Agent attempted</dt><dd id="fAttempt">—</dd><p class="fact-note" id="fAttemptNote">nothing yet</p></div>
+      <div class="fact"><dt>Money captured</dt><dd id="fCaptured">$0.00</dd><p class="fact-note" id="fCapturedNote">0 captures</p></div>
+      <div class="fact"><dt>Source</dt><dd>Real gate</dd><p class="fact-note">simulated PayPal</p></div>
+    </dl>
+    <div class="scale" aria-hidden="true"><span class="bar blue" id="bApproved"></span><span class="bar red" id="bAttempt"></span><span class="bar green" id="bCaptured"></span></div>
+    <div class="stopinfo" id="stopinfo"></div>
+    <h3>Stops · what happened</h3>
+    <ol class="stops" id="stops"></ol>
+  </section>
+
+  <section class="pane" id="pane-checks" role="tabpanel" aria-labelledby="tab-checks" hidden>
+    <p class="verdict" id="verdict" hidden></p>
+    <p class="subtle" id="checksSub">The gate's 8 checks run when the agent asks to pay.</p>
+    <ul class="checks" id="checks"></ul>
+    <h3>What PayPal holds <span class="pill sim sm">SIMULATED</span></h3>
+    <div class="orders" id="orders"></div>
+  </section>
+
+  <section class="pane" id="pane-data" role="tabpanel" aria-labelledby="tab-data" hidden>
+    <h3>The page the agent read</h3>
+    <p class="subtle" id="pageNote"></p>
+    <pre class="page" id="pageText"></pre>
+    <h3>Real and simulated</h3>
+    <ul class="plain">
+      <li><b>Real:</b> the gate (<code>lib/gate.mjs</code>) and its PayPal client; <span id="srcOrders">the agent's two orders, recorded from a live run and replayed</span>; every decision shown.</li>
+      <li><b>Simulated:</b> PayPal (a stand-in for the Orders API), the buyer's checkout approval and the timing. Order and capture ids are not PayPal ids. No money moves.</li>
+      <li><b>Limits:</b> sandbox project, one local model, one attack. Not an unconditional exactly-once guarantee (README).</li>
+    </ul>
+    <details class="tech"><summary>Technical log</summary><ol class="log" id="log"></ol></details>
+  </section>
+
+  <p class="foot">SIMULATED demo. Capture Gate · PayPal AI Hackathon 2026 · open source · not a PayPal product.</p>
+</aside>
+
+<div class="toast" id="toast" hidden></div>
+<script src="/demo.js"></script>
+</body>
+</html>

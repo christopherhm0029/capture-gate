@@ -121,22 +121,46 @@ Full tables: `evidence/results-live.md`, `evidence/results-simulated.md`. Saving
 
 ## Run it
 
+### Try the demo (no credentials)
+
+A guided, clickable walk-through of the attack and the recovery. It needs only Node 20+: no PayPal account, no credentials, no Ollama, no network, and not even `npm ci`.
+
+```bash
+git clone https://github.com/christopherhm0029/capture-gate && cd capture-gate
+npm run demo                       # or: node server.mjs  → http://127.0.0.1:8740 (PORT=... to change)
+```
+
+Open http://127.0.0.1:8740. The page is a map of the transaction's journey (You, the AI agent, the shop page, Capture Gate, PayPal), with an inspector on the right and the stops along the bottom. The inspector always shows the one next button:
+1. **Approve $12.50.** The gate freezes the approval. (You can change both amounts first: see below.)
+2. **Send the agent to the shop.** It reads the poisoned page and creates an order for 8 mugs, $100.00. Then **Approve in checkout**, as a careless buyer would.
+3. **Let the agent pay.** The gate reads the real order and runs its 8 checks: total ✗, items ✗ → **quarantined, 0 captures**. **Inspect the failed checks** shows them.
+4. **Reject · keep my original order.** The agent re-creates **1 mug, $12.50**. **Approve in checkout**, then **Let the agent pay**.
+5. All 8 checks pass and the order is **captured once**. **Simulate an agent retry**: it is **reconciled**, with no second capture.
+
+Click any station on the map or any stop in the timeline to move the view there and read what happens at that point.
+
+**Try your own amounts.** At step 1 you can edit the approved amount and the amount the attack tries (attack must be higher; $1.00 to $5,000.00 approved). $12.50 / $100.00 is the **recorded scenario**: it replays the orders a live agent created in the PayPal sandbox. Any other pair is a **custom scenario**: the two orders are generated for the simulation (no agent ran) and labelled so. A whole multiple of the approval becomes a quantity attack (for example $20 → $60 is 3 mugs); any other amount becomes a price attack (1 mug at an inflated price). In both cases the real gate decides the outcome.
+
+Then flip **Gate OFF** at the top (or use **Replay with the gate OFF**) to run the same attack without the gate. The attack amount is captured.
+
+**What is simulated.** Every screen carries a **SIMULATED** badge. The gate is the real `lib/gate.mjs`, using its real client `lib/paypal.mjs`, and every verdict on the page comes from `Gate.pay` / `Gate.reject`. The PayPal side is the deterministic fake Orders API the tests use (`test/fake-paypal.mjs`), so order ids like `SIM-ORDER-1` and capture ids like `CAP1` are simulated, not PayPal evidence. The agent is scripted: it replays the `create_order` calls the live agent made in the sandbox on 2026-11-10 (`evidence/demo-run-live-2026-11-10.json`). The simulated ledger is written to `state/simulated/` (git-ignored); nothing under `evidence/` is touched. For real PayPal sandbox runs, use the live demo below.
+
+### Live demo (PayPal sandbox)
+
 Requirements: Node 20+, [Ollama](https://ollama.com) with `qwen2.5:7b` (about 4.7 GB), and your own **PayPal sandbox** REST app (developer.paypal.com → Apps & Credentials → Sandbox), plus its sandbox **personal** account to approve checkouts as the buyer.
 
 ```bash
 npm ci --ignore-scripts
-npm test               # 38 tests, no network, no credentials
+npm test               # 51 tests, no network, no credentials
 npm run simulate       # the 24-scenario table, no network, no credentials
 ```
-
-Live demo (sandbox):
 
 ```bash
 ollama pull qwen2.5:7b
 export PAYPAL_CLIENT_ID=...        # sandbox app client id (never commit these)
 export PAYPAL_CLIENT_SECRET=...
 export PAYPAL_MERCHANT_ID=...      # your sandbox business account's Account ID (dashboard → Sandbox accounts)
-npm start                          # http://127.0.0.1:8740
+DEMO_MODE=sandbox npm start        # http://127.0.0.1:8740 (without DEMO_MODE the simulated demo starts)
 ```
 
 In the page:
@@ -154,6 +178,10 @@ The demo keeps its own ledger in `state/ledger.json` (git-ignored), so running i
 
 The server refuses to start the toolkit or the gate unless both point at the sandbox. The toolkit defaults to LIVE; we force it onto the sandbox and verify that.
 
+### Hosting the simulated demo publicly
+
+`deploy/template.yaml` runs the simulated demo on one small always-on server behind HTTPS. With `PUBLIC_HOST` set, the server accepts that host name, limits each visitor to 240 API calls and 30 new sessions per minute, refuses request bodies over 2 KB, expires idle sessions after 30 minutes (300 kept at most, their ledger files removed) and refuses to start in sandbox mode. No PayPal credentials exist on the server. `GET /healthz` reports the running commit.
+
 ## Project layout
 
 | Path | What |
@@ -161,12 +189,15 @@ The server refuses to start the toolkit or the gate unless both point at the san
 | `lib/gate.mjs` | the Capture Gate: frozen intent, 8 checks, quarantine + user rejection, one capture per intent, unknown-outcome reconciliation, post-capture verification |
 | `lib/paypal.mjs` | the gate's own minimal Orders v2 client (sandbox host enforced) |
 | `lib/agent.mjs` | the shopping agent: local model + PayPal Agent Toolkit (`create_order`, `get_order`, `pay_order`) |
-| `server.mjs`, `public/index.html` | local demo app (no build step, no external assets) |
+| `server.mjs` | local demo app: simulated by default, real sandbox only with `DEMO_MODE=sandbox` + credentials (no build step, no external assets) |
+| `lib/demo-sim.mjs`, `public/demo.*` | the guided simulated demo: real gate, fake Orders API, scripted agent replaying recorded calls |
+| `lib/sandbox-routes.mjs`, `public/index.html` | the live sandbox mode (agent, toolkit and openai loaded only in this mode) |
 | `pages/` | the honest shop page and 3 poisoned ones |
 | `scripts/eval.mjs` | live evaluation (agent creates orders; small live set approved and paid) |
 | `scripts/crash-test.mjs` | live double-pay / crash / retry test against the sandbox |
 | `scripts/simulate.mjs` | offline replay of the 24 recorded scenarios |
 | `scripts/vault-check.mjs` | Vault feasibility check (prints flags only, never the token) |
+| `deploy/template.yaml` | optional public hosting of the simulated demo: one small server, HTTPS, no credentials (CloudFormation) |
 | `test/` | unit tests, fault-injection tests (lost responses, restarts, bad capture statuses) and scenario assertions |
 
 ## Limitations (honest list)
