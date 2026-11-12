@@ -10,6 +10,8 @@ const usd = (v) => (v == null ? "—" : `$${Number(v).toFixed(2)}`);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const narrow = () => innerWidth <= 900;
+/** The interface scale set in demo.css (1 at 1440 x 900 and above, smaller on laptop windows); phones are always 1. */
+const K = () => (narrow() ? 1 : parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1);
 const NS = "http://www.w3.org/2000/svg";
 /** How many times the approval an amount is ("8×", "1.8×"), and the attack in words, from the scenario the server confirmed. */
 const times = (v, amount) => { const r = Number(amount) / Number(v.totals.approved); return `${Number.isInteger(r) ? r : r.toFixed(1)}×`; };
@@ -69,7 +71,7 @@ function buildMap() {
 /** The part of the screen the map can use (not covered by the inspector, the timeline or the top bar). */
 function visible() {
   const r = $("map").getBoundingClientRect();
-  return narrow() ? { W: r.width, H: r.height, l: 14, t: 54, r: r.width - 14, b: r.height - 26 } : { W: r.width, H: r.height, l: 24, t: 150, r: r.width - 400 - 56, b: r.height - 120 };
+  return narrow() ? { W: r.width, H: r.height, l: 14, t: 54, r: r.width - 14, b: r.height - 26 } : { W: r.width, H: r.height, l: 24 * K(), t: 150 * K(), r: r.width - 456 * K(), b: r.height - 120 * K() };
 }
 /** The viewBox that shows map rectangle [x, y, w, h] inside the visible area. */
 function frameFor([x, y, w, h]) {
@@ -79,7 +81,7 @@ function frameFor([x, y, w, h]) {
 /** Apply the camera. Markers, the transaction and the siding label are re-scaled so they keep their size on screen. */
 function applyCam() {
   $("map").setAttribute("viewBox", `${cam.x} ${cam.y} ${cam.w} ${cam.h}`);
-  zoomK = cam.w / ($("map").getBoundingClientRect().width || 1) * (narrow() ? .82 : 1);
+  zoomK = cam.w / ($("map").getBoundingClientRect().width || 1) * (narrow() ? .82 : K());
   for (const g of document.querySelectorAll("#world [data-x]")) g.setAttribute("transform", `translate(${g.dataset.x},${g.dataset.y}) scale(${zoomK})`);
   if (pktAt) $("pkt").setAttribute("transform", `translate(${pktAt[0]},${pktAt[1]}) scale(${zoomK})`);
   placeCallout();
@@ -98,7 +100,7 @@ function placeCallout() {
   const c = $("callout"); if (c.hidden || !pktAt) return;
   const v = $("map").getBoundingClientRect(), s = v.width / cam.w;
   const half = c.offsetWidth / 2 + 8;   // keep the whole callout on the map, below the top bar
-  c.style.left = `${Math.max(half, Math.min(v.width - half, (pktAt[0] - cam.x) * s))}px`; c.style.top = `${Math.max(c.offsetHeight + (narrow() ? 86 : 40), (pktAt[1] - cam.y) * s)}px`;
+  c.style.left = `${Math.max(half, Math.min(v.width - half, (pktAt[0] - cam.x) * s))}px`; c.style.top = `${Math.max(c.offsetHeight + (narrow() ? 86 : 40 * K()), (pktAt[1] - cam.y) * s)}px`;
 }
 /** What the travelling callout says: an eyebrow, one line, and a quieter second line. */
 function say(tone, eyebrow, title, sub = "") {
