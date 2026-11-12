@@ -2,6 +2,8 @@
 
 **An independent check between an AI shopping agent and the moment money moves.** The user approves what may be bought. The agent shops with the real PayPal Agent Toolkit. When it asks to pay, the gate re-reads the actual PayPal order and captures only if the order matches what the user approved. It allows one capture per approval: retries and concurrent calls are reconciled, and when a capture's outcome is unknown (lost response, crash) nothing else is paid until PayPal has been asked what happened.
 
+**Live demo: https://capture-gate.block-harmony.com** (simulated: the real gate against a stand-in for PayPal, no login, no money moves).
+
 PayPal sandbox only. No real money.
 
 ## The problem
@@ -123,7 +125,7 @@ Full tables: `evidence/results-live.md`, `evidence/results-simulated.md`. Saving
 
 ### Try the demo (no credentials)
 
-A guided, clickable walk-through of the attack and the recovery. It needs only Node 20+: no PayPal account, no credentials, no Ollama, no network, and not even `npm ci`.
+A guided, clickable walk-through of the attack and the recovery. It is hosted at https://capture-gate.block-harmony.com, or run it yourself: it needs only Node 20+: no PayPal account, no credentials, no Ollama, no network, and not even `npm ci`.
 
 ```bash
 git clone https://github.com/christopherhm0029/capture-gate && cd capture-gate
